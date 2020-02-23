@@ -13,9 +13,6 @@ func Init(serviceName string, f mountServices) {
 	if err := broker.Connect(); err != nil {
 		log.Fatal(err, " Failed to start broker. Ensure all is well!")
 	}
-	if err := broker.Connect(); err != nil {
-		log.Fatal(err)
-	}
 	forever := make(chan bool)
 	f(serviceName)
 	// TODO: Run service pings, health checks here and discoveries etc..
