@@ -1,8 +1,10 @@
 package nuMicro
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/Just4Ease/nuMicro/broker"
-	"github.com/Just4Ease/nuMicro/utils/log"
 )
 
 type mountServices func(serviceName string)
@@ -14,8 +16,10 @@ func Init(serviceName string, f mountServices) {
 	if err := broker.Connect(); err != nil {
 		log.Fatal(err)
 	}
-
 	forever := make(chan bool)
 	f(serviceName)
+	// TODO: Run service pings, health checks here and discoveries etc..
+	_log_ := fmt.Sprintf("Running nuMicro as : %s", serviceName)
+	fmt.Println(_log_)
 	<-forever
 }

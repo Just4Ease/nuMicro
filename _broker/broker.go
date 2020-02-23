@@ -25,6 +25,6 @@ type Message struct {
 	TimeSent  time.Time   `json:"timeSent"`            // Used for logging and terminating requests beyond a specific threshold.
 }
 
-type ActionHandler func(p map[string]interface{}) _utils.Result
+type ActionHandler func(p map[string]interface{}) utils.Result
 
 type Registry map[string]ActionHandler
