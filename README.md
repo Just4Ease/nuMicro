@@ -32,11 +32,11 @@ func main()  {
   nuMicro.Init(serviceName, EventsHandle, ActionsHandle)
 }
 
-func EventsHandle(serviceName)  {
+func EventsHandle(serviceName string)  {
  // Handle your events here for pub/sub pattern
 }
 
-func ActionsHandle(serviceName)  {
+func ActionsHandle(serviceName string)  {
  // Handle your actions here, for a request/response pattern.
 }
 ```
