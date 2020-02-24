@@ -40,7 +40,9 @@ func ActionsHandle(serviceName string)  {
  // Handle your actions here, for a request/response pattern.
 }
 ```
-
+#NOTE: 
+----
+- nuMicro uses NATS.io as it's broker but you can extend and configure your message broker
 
 TODO:
 ----
