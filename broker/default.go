@@ -10,7 +10,8 @@ import (
 
 	"github.com/Just4Ease/nuMicro/codec/json"
 	"github.com/Just4Ease/nuMicro/registry"
-	nats "github.com/nats-io/nats.go"
+	"github.com/gofrs/uuid"
+	"github.com/nats-io/nats.go"
 )
 
 type natsBroker struct {
@@ -213,6 +214,64 @@ func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption
 	n.RLock()
 	defer n.RUnlock()
 	return n.conn.Publish(channel, b)
+}
+
+func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption) (Event, error) {
+	u, _ := uuid.NewV4()
+	replyAlias := fmt.Sprintf("%s::%s", channel, u)
+	b, err := n.opts.Codec.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	n.RLock()
+	defer n.RUnlock()
+	var result Event
+	//defer n.conn.Flush()
+	_, _ = n.Subscribe(replyAlias, func(event Event) error {
+		result = event
+		return nil
+	})
+	_ = n.conn.PublishRequest(channel, replyAlias, b)
+
+	return result, nil
+}
+
+func (n *natsBroker) Respond(channel string, msg *Message, opts ...SubscribeOption) (Subscriber, error) {
+	if n.conn == nil {
+		return nil, errors.New("not connected")
+	}
+
+	opt := SubscribeOptions{
+		AutoAck: true,
+		Context: context.Background(),
+	}
+
+	for _, o := range opts {
+		if o != nil {
+			o(&opt)
+		}
+	}
+
+	fn := func(m *nats.Msg) {
+		out, _ := n.opts.Codec.Marshal(msg)
+		_ = m.Respond(out)
+	}
+
+	var sub *nats.Subscription
+	var err error
+
+	n.RLock()
+	if len(opt.Queue) > 0 {
+		sub, err = n.conn.QueueSubscribe(channel, opt.Queue, fn)
+	} else {
+		sub, err = n.conn.Subscribe(channel, fn)
+	}
+	n.RUnlock()
+	if err != nil {
+		return nil, err
+	}
+	//&subscriber{s: sub, opts: opt}
+	return &subscriber{s: sub, opts: opt}, nil
 }
 
 func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscriber, error) {

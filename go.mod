@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/go-redis/redis/v7 v7.2.0
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/golang/protobuf v1.3.3
 	github.com/google/uuid v1.1.1
 	github.com/micro/go-micro/v2 v2.1.0
