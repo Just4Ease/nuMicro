@@ -9,6 +9,13 @@ import (
 
 type mountServices func(serviceName string)
 
+/**
+ * Entry point into nuMicro
+ * The ```Init``` method takes a service name and the handler for all subscription.
+ *
+ * param: string        serviceName
+ * param: mountServices eventsHandler
+ */
 func Init(serviceName string, eventsHandler mountServices) {
 	if err := broker.Connect(); err != nil {
 		log.Fatal(err, " Failed to start broker. Mayday!, Mayday! Call the NATS officer, ensure all is well!")
