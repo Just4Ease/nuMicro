@@ -17,7 +17,7 @@ type Broker interface {
 // Handler is used to process messages via a subscription of a channel.
 // The handler is passed a publication interface which contains the
 // message and optional Ack method to acknowledge receipt of the message.
-type Handler func(Event) error
+type Handler func(Event) (interface{}, error)
 
 type Message struct {
 	Header map[string]string
@@ -70,9 +70,6 @@ func Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscr
 }
 func Request(channel string, msg *Message, opts ...PublishOption) (Event, error) {
 	return DefaultBroker.Request(channel, msg, opts...)
-}
-func Respond(channel string, msg *Message, opts ...SubscribeOption) (Subscriber, error) {
-	return DefaultBroker.Respond(channel, msg, opts...)
 }
 
 func String() string {

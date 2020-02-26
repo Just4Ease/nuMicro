@@ -29,15 +29,11 @@ import "github.com/Just4Ease/nuMicro"
 
 func main()  {
   serviceName := "UsersSVC" // The name of your microservice here.
-  nuMicro.Init(serviceName, EventsHandle, ActionsHandle)
+  nuMicro.Init(serviceName, EventsHandle)
 }
 
 func EventsHandle(serviceName string)  {
  // Handle your events here for pub/sub pattern
-}
-
-func ActionsHandle(serviceName string)  {
- // Handle your actions here, for a request/response pattern.
 }
 ```
 #NOTE: 

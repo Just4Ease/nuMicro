@@ -9,7 +9,7 @@ import (
 
 type mountServices func(serviceName string)
 
-func Init(serviceName string, eventsHandler mountServices, actionsHandler mountServices) {
+func Init(serviceName string, eventsHandler mountServices) {
 	if err := broker.Connect(); err != nil {
 		log.Fatal(err, " Failed to start broker. Mayday!, Mayday! Call the NATS officer, ensure all is well!")
 	}
@@ -17,14 +17,8 @@ func Init(serviceName string, eventsHandler mountServices, actionsHandler mountS
 	if eventsHandler != nil {
 		go eventsHandler(serviceName)
 	}
-	if actionsHandler != nil {
-		go actionsHandler(serviceName)
-	}
 	if eventsHandler == nil {
 		fmt.Println("Event handler has not been set, no events will be listened for.")
-	}
-	if actionsHandler == nil {
-		fmt.Println("Action handler has not been set, no actions will be called.")
 	}
 
 	log.Println(fmt.Sprintf("Running nuMicro as : %s", serviceName))

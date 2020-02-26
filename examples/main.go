@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	nuMicro.Init("ExampleSVC", nil, nil)
+	nuMicro.Init("ExampleSVC", nil)
 }
