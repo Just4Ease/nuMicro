@@ -70,7 +70,7 @@ func (s *serviceSub) run() error {
 		}
 
 		// TODO: handle error
-		_, _ = s.handler(&serviceEvent{
+		_ = s.handler(&serviceEvent{
 			channel: s.channel,
 			message: &Message{
 				Header: msg.Header,

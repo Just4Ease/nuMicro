@@ -12,6 +12,7 @@ import (
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
+	"github.com/vmihailenco/msgpack"
 )
 
 type natsBroker struct {
@@ -207,7 +208,7 @@ func (n *natsBroker) Options() Options {
 }
 
 func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption) error {
-	b, err := n.opts.Codec.Marshal(msg)
+	b, err := msgpack.Marshal(msg)
 	if err != nil {
 		return err
 	}
@@ -216,35 +217,29 @@ func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption
 	return n.conn.Publish(channel, b)
 }
 
-func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption) (Event, error) {
-	u, _ := uuid.NewV4()
-	replyAlias := fmt.Sprintf("%s::%s", channel, u)
-	b, err := n.opts.Codec.Marshal(msg)
+func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption) (interface{}, error) {
+	id, _ := uuid.NewV4()
+	replyAlias := fmt.Sprintf("%s", id)
+	var result interface{}
+	wg := sync.WaitGroup{}
+	b, err := msgpack.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 	n.RLock()
 	defer n.RUnlock()
-	var result *Message
-
-	stream := make(chan *Message)
-
-	go func(s chan<- *Message) {
-		_, _ = n.Subscribe(replyAlias, func(event Event) (interface{}, error) {
-			s <- event.Message()
-			fmt.Println(event.Message(), " M at this time of assignment", time.Now())
-			return nil, nil
+	wg.Add(1)
+	go func(r *interface{}) {
+		_, _ = n.conn.Subscribe(replyAlias, func(msg *nats.Msg) {
+			if err := msgpack.Unmarshal(msg.Data, &r); err != nil {
+				wg.Done()
+			}
+			wg.Done()
 		})
-	}(stream)
+	}(&result)
 	_ = n.conn.PublishRequest(channel, replyAlias, b)
-	go func(s <-chan *Message) {
-		if o, ok := <-s; ok {
-			result = o
-		}
-	}(stream)
-
-	fmt.Println(result, " M at this time of return", time.Now())
-	return &publication{c: replyAlias, m: result}, nil
+	wg.Wait()
+	return result, nil
 }
 
 func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscriber, error) {
@@ -265,23 +260,53 @@ func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...Subscrib
 
 	fn := func(msg *nats.Msg) {
 		var m Message
-		if err := n.opts.Codec.Unmarshal(msg.Data, &m); err != nil {
+		if err := msgpack.Unmarshal(msg.Data, &m); err != nil {
 			return
 		}
-		i, e := handler(&publication{m: &m, c: msg.Subject})
-		if e != nil {
-			fmt.Println(e.Error(), "Error in message handler inside subscribe block.")
-			_ = msg.Respond(nil)
+		_ = handler(&publication{m: &m, c: msg.Subject})
+	}
+
+	var sub *nats.Subscription
+	var err error
+
+	n.RLock()
+	if len(opt.Queue) > 0 {
+		sub, err = n.conn.QueueSubscribe(channel, opt.Queue, fn)
+	} else {
+		sub, err = n.conn.Subscribe(channel, fn)
+	}
+	n.RUnlock()
+	if err != nil {
+		return nil, err
+	}
+	//&subscriber{s: sub, opts: opt}
+	return &subscriber{s: sub, opts: opt}, nil
+}
+
+func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...SubscribeOption) (Subscriber, error) {
+	if n.conn == nil {
+		return nil, errors.New("not connected")
+	}
+
+	opt := SubscribeOptions{
+		AutoAck: true,
+		Context: context.Background(),
+	}
+
+	for _, o := range opts {
+		if o != nil {
+			o(&opt)
 		}
-		if msg.Reply != "" {
-			if i != nil {
-				out, _ := n.opts.Codec.Marshal(i)
-				e := msg.Respond(out)
-				if e != nil {
-					fmt.Println(e.Error(), " Error responding to request on : ", msg.Subject)
-				}
-			}
+	}
+
+	fn := func(msg *nats.Msg) {
+		var m Message
+		if err := msgpack.Unmarshal(msg.Data, &m); err != nil {
+			return
 		}
+		i := handler(&publication{m: &m, c: msg.Subject})
+		out, _ := msgpack.Marshal(i)
+		_ = msg.Respond(out)
 	}
 
 	var sub *nats.Subscription
