@@ -227,10 +227,10 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	defer n.RUnlock()
 	var result Event
 	//defer n.conn.Flush()
-	_, _ = n.Subscribe(replyAlias, func(event Event) error {
+	_, _ = n.Subscribe(replyAlias, func(event Event) (interface{}, error) {
 		result = event
 		fmt.Println(result.Message(), " M at this time of assignment", time.Now())
-		return nil
+		return nil, nil
 	})
 	_ = n.conn.PublishRequest(channel, replyAlias, b)
 
@@ -265,10 +265,12 @@ func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...Subscrib
 			_ = msg.Respond(nil)
 		}
 		if msg.Reply != "" {
-			out, _ := n.opts.Codec.Marshal(i)
-			e := msg.Respond(out)
-			if e != nil {
-				fmt.Println(e.Error(), " Error responding to request on : ", msg.Subject)
+			if i != nil {
+				out, _ := n.opts.Codec.Marshal(i)
+				e := msg.Respond(out)
+				if e != nil {
+					fmt.Println(e.Error(), " Error responding to request on : ", msg.Subject)
+				}
 			}
 		}
 	}
