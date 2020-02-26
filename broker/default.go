@@ -225,17 +225,26 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	}
 	n.RLock()
 	defer n.RUnlock()
-	var result Event
-	//defer n.conn.Flush()
-	_, _ = n.Subscribe(replyAlias, func(event Event) (interface{}, error) {
-		result = event
-		fmt.Println(result.Message(), " M at this time of assignment", time.Now())
-		return nil, nil
-	})
-	_ = n.conn.PublishRequest(channel, replyAlias, b)
+	var result *Message
 
-	fmt.Println(result.Message(), " M at this time of return", time.Now())
-	return result, nil
+	stream := make(chan *Message)
+
+	go func(s chan<- *Message) {
+		_, _ = n.Subscribe(replyAlias, func(event Event) (interface{}, error) {
+			s <- event.Message()
+			fmt.Println(event.Message(), " M at this time of assignment", time.Now())
+			return nil, nil
+		})
+	}(stream)
+	_ = n.conn.PublishRequest(channel, replyAlias, b)
+	go func(s <-chan *Message) {
+		if o, ok := <-s; ok {
+			result = o
+		}
+	}(stream)
+
+	fmt.Println(result, " M at this time of return", time.Now())
+	return &publication{c: replyAlias, m: result}, nil
 }
 
 func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscriber, error) {
