@@ -16,7 +16,7 @@ type mountServices func(serviceName string)
  * param: string        serviceName
  * param: mountServices eventsHandler
  */
-func Init(serviceName string, eventsHandler mountServices) {
+func Init(serviceName string, eventsHandler mountServices, actionHandler mountServices) {
 	if err := broker.Connect(); err != nil {
 		log.Fatal(err, " Failed to start broker. Mayday!, Mayday! Call the NATS officer, ensure all is well!")
 	}
@@ -26,6 +26,13 @@ func Init(serviceName string, eventsHandler mountServices) {
 	}
 	if eventsHandler == nil {
 		fmt.Println("Event handler has not been set, no events will be listened for.")
+	}
+
+	if actionHandler != nil {
+		go actionHandler(serviceName)
+	}
+	if actionHandler == nil {
+		fmt.Println("Action handler has not been set, no requests will be responded to.")
 	}
 
 	log.Println(fmt.Sprintf("Running nuMicro as : %s", serviceName))
