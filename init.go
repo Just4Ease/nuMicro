@@ -15,6 +15,7 @@ type mountServices func(serviceName string)
  *
  * param: string        serviceName
  * param: mountServices eventsHandler
+ * param: mountServices actionHandler
  */
 func Init(serviceName string, eventsHandler mountServices, actionHandler mountServices) {
 	if err := broker.Connect(); err != nil {
