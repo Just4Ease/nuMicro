@@ -25,15 +25,43 @@ The Init `nuMicro.Init` is a an entry point into starting the Microservice.
 ```go
 package main
 
-import "github.com/Just4Ease/nuMicro" 
+import (
+
+"fmt"
+
+
+"github.com/Just4Ease/nuMicro"
+"github.com/Just4Ease/nuMicro/broker"
+) 
+var serviceName string
 
 func main()  {
-  serviceName := "UsersSVC" // The name of your microservice here.
-  nuMicro.Init(serviceName, EventsHandle)
+  serviceName = "UsersSVC" // The name of your microservice here.
+  nuMicro.Init(serviceName, EventsHandle, ActionsHandle)
 }
+
+func BuildChannelName(channelName string) string {
+    s := fmt.Sprintf("%s.%s", serviceName, channelName)
+    return s
+}
+
 
 func EventsHandle(serviceName string)  {
  // Handle your events here for pub/sub pattern
+}
+
+func ActionsHandle(serviceName string)  {
+ // Handle your actions here for pub/sub pattern
+_, _ = broker.Respond(BuildChannelName("Contact"), func(event broker.Event) interface{} {
+        // Here, this could be a function that processes something to respond when it is being called on the contact channel.
+		result := make(map[string]string)
+		result["username"] = "just4ease"
+		result["email"] = "justicenefe@gmail.com"
+		result["phone"] = "+2347056031137"
+		result["website"] = "https://justicenefe.com"
+
+		return result
+	}, nil)
 }
 ```
 #NOTE: 
