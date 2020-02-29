@@ -10,6 +10,7 @@ require (
 	github.com/micro/go-micro/v2 v2.1.0
 	github.com/nats-io/nats-server/v2 v2.1.4
 	github.com/nats-io/nats.go v1.9.1
+	github.com/shamaton/msgpack v1.1.1
 	github.com/sony/gobreaker v0.4.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 )

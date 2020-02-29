@@ -26,6 +26,19 @@ type Message struct {
 	Body   []byte
 }
 
+type RequestInput struct {
+	Headers map[string]string
+	Body   interface{}
+	Params map[string]interface{}
+	Query  map[string]interface{}
+}
+
+type RequestEvent interface {
+	Channel() string
+	Message() *RequestInput
+	Ack() error
+}
+
 type SubscribeService interface {
 	SendMsg(interface{}) error
 	RecvMsg(interface{}) error

@@ -12,7 +12,7 @@ import (
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
-	"github.com/vmihailenco/msgpack"
+	"github.com/shamaton/msgpack"
 )
 
 type natsBroker struct {
@@ -208,7 +208,7 @@ func (n *natsBroker) Options() Options {
 }
 
 func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption) error {
-	b, err := msgpack.Marshal(msg)
+	b, err := msgpack.Encode(msg)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,8 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	replyAlias := fmt.Sprintf("%s", id)
 	var result interface{}
 	wg := sync.WaitGroup{}
-	b, err := msgpack.Marshal(msg)
+	//b, err := n.opts.Codec.Marshal(msg)
+	b, err := n.opts.Codec.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +232,7 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	wg.Add(1)
 	go func(r *interface{}) {
 		_, _ = n.conn.Subscribe(replyAlias, func(msg *nats.Msg) {
-			if err := msgpack.Unmarshal(msg.Data, &r); err != nil {
+			if err := msgpack.Decode(msg.Data, &r); err != nil {
 				wg.Done()
 			}
 			wg.Done()
@@ -260,7 +261,7 @@ func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...Subscrib
 
 	fn := func(msg *nats.Msg) {
 		var m Message
-		if err := msgpack.Unmarshal(msg.Data, &m); err != nil {
+		if err := msgpack.Decode(msg.Data, &m); err != nil {
 			return
 		}
 		_ = handler(&publication{m: &m, c: msg.Subject})
@@ -301,11 +302,11 @@ func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...Subsc
 
 	fn := func(msg *nats.Msg) {
 		var m Message
-		if err := msgpack.Unmarshal(msg.Data, &m); err != nil {
+		if err := msgpack.Decode(msg.Data, &m); err != nil {
 			return
 		}
 		i := handler(&publication{m: &m, c: msg.Subject})
-		out, _ := msgpack.Marshal(i)
+		out, _ := msgpack.Encode(i)
 		_ = msg.Respond(out)
 	}
 
