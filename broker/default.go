@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Just4Ease/nuMicro/codec/json"
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
@@ -223,7 +222,7 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	var result interface{}
 	wg := sync.WaitGroup{}
 	//b, err := n.opts.Codec.Marshal(msg)
-	b, err := n.opts.Codec.Marshal(msg)
+	b, err := msgpack.Encode(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +374,7 @@ func (n *natsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err e
 func NewBroker(opts ...Option) *natsBroker {
 	options := Options{
 		// Default codec
-		Codec:    json.Marshaller{},
+		//Codec:    json.Marshaller{},
 		Context:  context.Background(),
 		Registry: registry.DefaultRegistry,
 	}
