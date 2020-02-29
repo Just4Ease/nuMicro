@@ -12,7 +12,6 @@ import (
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
-	"github.com/shamaton/msgpack"
 )
 
 type natsBroker struct {
@@ -230,11 +229,9 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	defer n.RUnlock()
 	wg.Add(1)
 	go func(r *interface{}) {
+		defer wg.Done()
 		_, _ = n.conn.Subscribe(replyAlias, func(msg *nats.Msg) {
-			if err := msgpack.Decode(msg.Data, &r); err != nil {
-				wg.Done()
-			}
-			wg.Done()
+			_ = n.opts.Codec.Unmarshal(msg.Data, &r)
 		})
 	}(&result)
 	_ = n.conn.PublishRequest(channel, replyAlias, b)
@@ -260,7 +257,7 @@ func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...Subscrib
 
 	fn := func(msg *nats.Msg) {
 		var m Message
-		if err := msgpack.Decode(msg.Data, &m); err != nil {
+		if err := n.opts.Codec.Unmarshal(msg.Data, &m); err != nil {
 			return
 		}
 		_ = handler(&publication{m: &m, c: msg.Subject})
