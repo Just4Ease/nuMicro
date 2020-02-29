@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Just4Ease/nuMicro/codec/json"
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
@@ -207,7 +208,7 @@ func (n *natsBroker) Options() Options {
 }
 
 func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption) error {
-	b, err := msgpack.Encode(msg)
+	b, err := n.opts.Codec.Marshal(msg)
 	if err != nil {
 		return err
 	}
@@ -221,8 +222,7 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	replyAlias := fmt.Sprintf("%s", id)
 	var result interface{}
 	wg := sync.WaitGroup{}
-	//b, err := n.opts.Codec.Marshal(msg)
-	b, err := msgpack.Encode(msg)
+	b, err := n.opts.Codec.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -301,11 +301,11 @@ func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...Subsc
 
 	fn := func(msg *nats.Msg) {
 		var m Message
-		if err := msgpack.Decode(msg.Data, &m); err != nil {
+		if err := n.opts.Codec.Unmarshal(msg.Data, &m); err != nil {
 			return
 		}
 		i := handler(&publication{m: &m, c: msg.Subject})
-		out, _ := msgpack.Encode(i)
+		out, _ := n.opts.Codec.Marshal(i)
 		_ = msg.Respond(out)
 	}
 
@@ -374,7 +374,7 @@ func (n *natsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err e
 func NewBroker(opts ...Option) *natsBroker {
 	options := Options{
 		// Default codec
-		//Codec:    json.Marshaller{},
+		Codec:    json.Marshaller{},
 		Context:  context.Background(),
 		Registry: registry.DefaultRegistry,
 	}
