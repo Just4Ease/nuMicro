@@ -35,9 +35,10 @@ type RegisterOption func(*RegisterOptions)
 type WatchOption func(*WatchOptions)
 
 // Register a service node. Additionally supply options such as TTL.
-//func Register(s *Service, opts ...RegisterOption) error {
-//	return DefaultRegistry.Register(s, opts...)
-//}
+func Register(s *Service, opts ...RegisterOption) error {
+	//return DefaultRegistry.Register(s, opts...)
+	return nil
+}
 
 // Deregister a service node
 //func Deregister(s *Service) error {

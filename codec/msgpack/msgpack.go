@@ -1,16 +1,16 @@
 package msgpack
 
 import (
-	"encoding/json"
 	"io"
 
 	"github.com/Just4Ease/nuMicro/codec"
+	"github.com/vmihailenco/msgpack"
 )
 
 type Codec struct {
 	Conn    io.ReadWriteCloser
-	Encoder *json.Encoder
-	Decoder *json.Decoder
+	Encoder *msgpack.Encoder
+	Decoder *msgpack.Decoder
 }
 
 func (c *Codec) ReadHeader(m *codec.Message, t codec.MessageType) error {
@@ -40,10 +40,9 @@ func (c *Codec) String() string {
 }
 
 func NewCodec(c io.ReadWriteCloser) codec.Codec {
-	//return &Codec{
-	//	Conn:    c,
-	//	Decoder: msgpack.NewDecoder(c),
-	//	Encoder: msgpack.NewDecoder(c),
-	//}
-	return nil
+	return &Codec{
+		Conn:    c,
+		Decoder: msgpack.NewDecoder(c),
+		Encoder: msgpack.NewEncoder(c),
+	}
 }

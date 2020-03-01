@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Just4Ease/nuMicro/codec/json"
+	"github.com/Just4Ease/nuMicro/codec/msgpack"
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
@@ -229,8 +229,8 @@ func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption
 	defer n.RUnlock()
 	wg.Add(1)
 	go func(r *interface{}) {
-		defer wg.Done()
 		_, _ = n.conn.Subscribe(replyAlias, func(msg *nats.Msg) {
+			defer wg.Done()
 			_ = n.opts.Codec.Unmarshal(msg.Data, &r)
 		})
 	}(&result)
@@ -369,9 +369,22 @@ func (n *natsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err e
 }
 
 func NewBroker(opts ...Option) *natsBroker {
+	//options := Options{
+	//	// Default codec
+	//	Codec:    json.Marshaller{},
+	//	Context:  context.Background(),
+	//	Registry: registry.DefaultRegistry,
+	//}
+	//
+	//n := &natsBroker{
+	//	opts:    options,
+	//	closeCh: make(chan error),
+	//}
+	//n.setOption(opts...)
+
 	options := Options{
 		// Default codec
-		Codec:    json.Marshaller{},
+		Codec:    msgpack.Marshaller{},
 		Context:  context.Background(),
 		Registry: registry.DefaultRegistry,
 	}

@@ -11,16 +11,7 @@ func (m Marshaller) Marshal(v interface{}) ([]byte, error) {
 }
 
 func (m Marshaller) Unmarshal(d []byte, v interface{}) error {
-	b, err := msgpack.Marshal(&d)
-	if err != nil {
-		return err
-	}
-
-	if err := msgpack.Unmarshal(b, &v); err != nil {
-		return err
-	}
-
-	return nil
+	return msgpack.Unmarshal(d, v)
 }
 
 func (m Marshaller) String() string {
