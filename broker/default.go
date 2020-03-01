@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Just4Ease/nuMicro/codec/msgpack"
+	"github.com/Just4Ease/nuMicro/codec/json"
 	"github.com/Just4Ease/nuMicro/registry"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
@@ -384,7 +384,7 @@ func NewBroker(opts ...Option) *natsBroker {
 
 	options := Options{
 		// Default codec
-		Codec:    msgpack.Marshaller{},
+		Codec:    json.Marshaller{},
 		Context:  context.Background(),
 		Registry: registry.DefaultRegistry,
 	}
