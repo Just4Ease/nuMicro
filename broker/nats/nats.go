@@ -12,10 +12,8 @@ import (
 	"time"
 
 	"github.com/Just4Ease/nuMicro/broker"
-	"github.com/Just4Ease/nuMicro/codec/json"
-	"github.com/Just4Ease/nuMicro/registry"
+	"github.com/Just4Ease/nuMicro/codec/msgpack"
 	"github.com/Just4Ease/nuMicro/utils/addr"
-	"github.com/Just4Ease/nuMicro/utils/log"
 	"github.com/nats-io/nats-server/v2/server"
 	nats "github.com/nats-io/nats.go"
 )
@@ -47,6 +45,10 @@ type natsBroker struct {
 type subscriber struct {
 	s    *nats.Subscription
 	opts broker.SubscribeOptions
+}
+
+func (s *subscriber) Channel() string {
+	panic("implement me")
 }
 
 type publication struct {
@@ -157,21 +159,21 @@ func (n *natsBroker) serve(exit chan bool) error {
 	var cOpts server.ClusterOpts
 	var routes []*url.URL
 
-	// get existing nats servers to connect to
-	services, err := n.opts.Registry.GetService("go.micro.nats.broker")
-	if err == nil {
-		for _, service := range services {
-			for _, node := range service.Nodes {
-				u, err := url.Parse("nats://" + node.Address)
-				if err != nil {
-					log.Log(err)
-					continue
-				}
-				// append to the cluster routes
-				routes = append(routes, u)
-			}
-		}
-	}
+	//// get existing nats servers to connect to
+	//services, err := n.opts.Registry.GetService("go.micro.nats.broker")
+	//if err == nil {
+	//	for _, service := range services {
+	//		for _, node := range service.Nodes {
+	//			u, err := url.Parse("nats://" + node.Address)
+	//			if err != nil {
+	//				log.Log(err)
+	//				continue
+	//			}
+	//			// append to the cluster routes
+	//			routes = append(routes, u)
+	//		}
+	//	}
+	//}
 
 	// try get existing server
 	s := n.server
@@ -238,24 +240,24 @@ func (n *natsBroker) serve(exit chan bool) error {
 			select {
 			case <-exit:
 				// deregister on exit
-				n.opts.Registry.Deregister(&_registry.Service{
-					Name:    "go.micro.nats.broker",
-					Version: "v2",
-					Nodes: []*_registry.Node{
-						{Id: s.ID(), Address: s.ClusterAddr().String()},
-					},
-				})
+				//n.opts.Registry.Deregister(&_registry.Service{
+				//	Name:    "go.micro.nats.broker",
+				//	Version: "v2",
+				//	Nodes: []*_registry.Node{
+				//		{Id: s.ID(), Address: s.ClusterAddr().String()},
+				//	},
+				//})
 				s.Shutdown()
 				return
 			default:
 				// register the broker
-				n.opts.Registry.Register(&_registry.Service{
-					Name:    "go.micro.nats.broker",
-					Version: "v2",
-					Nodes: []*_registry.Node{
-						{Id: s.ID(), Address: s.ClusterAddr().String()},
-					},
-				}, _registry.RegisterTTL(time.Minute))
+				//n.opts.Registry.Register(&_registry.Service{
+				//	Name:    "go.micro.nats.broker",
+				//	Version: "v2",
+				//	Nodes: []*_registry.Node{
+				//		{Id: s.ID(), Address: s.ClusterAddr().String()},
+				//	},
+				//}, _registry.RegisterTTL(time.Minute))
 				time.Sleep(time.Minute)
 			}
 		}
@@ -378,7 +380,7 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 		if err := n.opts.Codec.Unmarshal(msg.Data, &m); err != nil {
 			return
 		}
-		handler(&publication{m: &m, t: msg.Subject})
+		//handler(&publication{m: &m, t: msg.Subject})
 	}
 
 	var sub *nats.Subscription
@@ -463,9 +465,9 @@ func (n *natsBroker) onDisconnectedError(conn *nats.Conn, err error) {
 func NewBroker(opts ...broker.Option) broker.Broker {
 	options := broker.Options{
 		// Default codec
-		Codec:    json.Marshaler{},
-		Context:  context.Background(),
-		Registry: _registry.DefaultRegistry,
+		Codec:   msgpack.Marshaller{},
+		Context: context.Background(),
+		//Registry: _registry.DefaultRegistry,
 	}
 
 	n := &natsBroker{

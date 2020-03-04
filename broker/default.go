@@ -8,8 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Just4Ease/nuMicro/codec/json"
-	"github.com/Just4Ease/nuMicro/registry"
+	"github.com/Just4Ease/nuMicro/codec/msgpack"
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nats.go"
 )
@@ -369,24 +368,10 @@ func (n *natsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err e
 }
 
 func NewBroker(opts ...Option) *natsBroker {
-	//options := Options{
-	//	// Default codec
-	//	Codec:    json.Marshaller{},
-	//	Context:  context.Background(),
-	//	Registry: registry.DefaultRegistry,
-	//}
-	//
-	//n := &natsBroker{
-	//	opts:    options,
-	//	closeCh: make(chan error),
-	//}
-	//n.setOption(opts...)
-
 	options := Options{
 		// Default codec
-		Codec:    json.Marshaller{},
-		Context:  context.Background(),
-		Registry: registry.DefaultRegistry,
+		Codec:   msgpack.Marshaller{},
+		Context: context.Background(),
 	}
 
 	n := &natsBroker{
