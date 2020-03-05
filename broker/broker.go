@@ -19,18 +19,21 @@ type Broker interface {
 // The handler is passed a publication interface which contains the
 // message and optional Ack method to acknowledge receipt of the message.
 type Handler func(Event) error
-type ActionHandle func(Event) interface{}
+type ActionHandle func(RequestEvent) interface{}
 
 type Message struct {
 	Header map[string]string
 	Body   []byte
 }
 
+/**
+ * For requests
+ */
 type RequestInput struct {
 	Headers map[string]string
-	Body   interface{}
-	Params map[string]interface{}
-	Query  map[string]interface{}
+	Body    interface{}
+	Params  map[string]interface{}
+	Query   map[string]interface{}
 }
 
 type RequestEvent interface {

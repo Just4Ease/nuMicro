@@ -52,6 +52,23 @@ type publication struct {
 	m *Message
 }
 
+type req struct {
+	c string
+	m *RequestInput
+}
+
+func (r req) Channel() string {
+	return r.c
+}
+func (r req) Message() *RequestInput {
+	return r.m
+}
+
+func (r req) Ack() error {
+	// Our server auto acks.
+	return nil
+}
+
 func (p *publication) Channel() string {
 	return p.c
 }
