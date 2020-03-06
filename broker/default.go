@@ -313,11 +313,11 @@ func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...Subsc
 	}
 
 	fn := func(msg *nats.Msg) {
-		var m Message
+		var m RequestInput
 		if err := n.opts.Codec.Unmarshal(msg.Data, &m); err != nil {
 			return
 		}
-		i := handler(&publication{m: &m, c: msg.Subject})
+		i := handler(&req{m: &m, c: msg.Subject})
 		out, _ := n.opts.Codec.Marshal(i)
 		_ = msg.Respond(out)
 	}
