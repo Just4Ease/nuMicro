@@ -65,8 +65,9 @@ Get By Id
 */
 func (d DataStore) GetById(id string) map[string]interface{} {
 	collection := d.Connection.(*mongo.Collection)
+	Id, _ := primitive.ObjectIDFromHex(id)
 	var result map[string]interface{}
-	err := collection.FindOne(nil, bson.M{"_id": id}).Decode(&result)
+	err := collection.FindOne(nil, bson.M{"_id": Id}).Decode(&result)
 	if err != nil {
 		return nil
 	}
