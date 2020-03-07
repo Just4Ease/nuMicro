@@ -296,7 +296,7 @@ func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...Subscrib
 	return &subscriber{s: sub, opts: opt}, nil
 }
 
-func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...SubscribeOption) (Subscriber, error) {
+func (n *natsBroker) Respond(channel string, handler ActionHandle) (Subscriber, error) {
 	if n.conn == nil {
 		return nil, errors.New("not connected")
 	}
@@ -304,12 +304,6 @@ func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...Subsc
 	opt := SubscribeOptions{
 		AutoAck: true,
 		Context: context.Background(),
-	}
-
-	for _, o := range opts {
-		if o != nil {
-			o(&opt)
-		}
 	}
 
 	fn := func(msg *nats.Msg) {
