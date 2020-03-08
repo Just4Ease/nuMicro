@@ -232,7 +232,7 @@ func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption
 	return n.conn.Publish(channel, b)
 }
 
-func (n *natsBroker) Request(channel string, msg *Message, opts ...PublishOption) (interface{}, error) {
+func (n *natsBroker) Request(channel string, msg *RequestInput, opts ...PublishOption) (interface{}, error) {
 	id, _ := uuid.NewV4()
 	replyAlias := fmt.Sprintf("%s", id)
 	var result interface{}

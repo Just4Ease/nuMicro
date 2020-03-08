@@ -9,7 +9,7 @@ type Broker interface {
 	Connect() error
 	Disconnect() error
 	Publish(channel string, m *Message, opts ...PublishOption) error
-	Request(channel string, m *Message, opts ...PublishOption) (interface{}, error)
+	Request(channel string, m *RequestInput, opts ...PublishOption) (interface{}, error)
 	Respond(channel string, h ActionHandle, opts ...SubscribeOption) (Subscriber, error)
 	Subscribe(channel string, h Handler, opts ...SubscribeOption) (Subscriber, error)
 	String() string
@@ -90,7 +90,7 @@ func Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscr
 func Respond(channel string, handler ActionHandle, opts ...SubscribeOption) (Subscriber, error) {
 	return DefaultBroker.Respond(channel, handler, opts...)
 }
-func Request(channel string, msg *Message, opts ...PublishOption) (interface{}, error) {
+func Request(channel string, msg *RequestInput, opts ...PublishOption) (interface{}, error) {
 	return DefaultBroker.Request(channel, msg, opts...)
 }
 
