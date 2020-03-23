@@ -14,4 +14,5 @@ require (
 	github.com/sony/gobreaker v0.4.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.mongodb.org/mongo-driver v1.3.1
+	golang.org/x/tools v0.0.0-20191216173652-a0e659d51361
 )
