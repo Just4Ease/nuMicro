@@ -19,7 +19,7 @@ func main() {
 		fmt.Println(i)
 	}()
 	serviceName := "ExampleSVC"
-	nuMicro.Init(serviceName, nil, Action, broker.Addrs("nats://demo.nats.io"))
+	nuMicro.Init(serviceName, nil, Action, broker.Addrs("134.122.31.217:4222"))
 }
 
 func Action(serviceName string) {

@@ -94,24 +94,24 @@ func (s *subscriber) Unsubscribe() error {
 	return s.s.Unsubscribe()
 }
 
-//func (n *natsBroker) Address() string {
-//	n.RLock()
-//	defer n.RUnlock()
-//
-//	if n.server != nil {
-//		return n.server.ClusterAddr().String()
-//	}
-//
-//	if n.conn != nil && n.conn.IsConnected() {
-//		return n.conn.ConnectedUrl()
-//	}
-//
-//	if len(n.addrs) > 0 {
-//		return n.addrs[0]
-//	}
-//
-//	return "127.0.0.1:-1"
-//}
+func (n *natsBroker) Address() string {
+	n.RLock()
+	defer n.RUnlock()
+
+	//if n.server != nil {
+	//	return n.server.ClusterAddr().String()
+	//}
+
+	if n.conn != nil && n.conn.IsConnected() {
+		return n.conn.ConnectedUrl()
+	}
+
+	if len(n.addresses) > 0 {
+		return n.addresses[0]
+	}
+
+	return "127.0.0.1:-1"
+}
 
 func (n *natsBroker) setAddresses(addresses []string) []string {
 	//nolint:prealloc
@@ -146,6 +146,7 @@ func (n *natsBroker) Connect() error {
 		// set to connected
 	}
 
+
 	status := nats.CLOSED
 	if n.conn != nil {
 		status = n.conn.Status()
@@ -160,7 +161,7 @@ func (n *natsBroker) Connect() error {
 		opts.AsyncErrorCB = n.onAsyncError
 		opts.DisconnectedErrCB = n.onDisconnectedError
 		opts.ClosedCB = n.onClose
-		//opts.Servers = n.servers
+		opts.Servers = n.addresses
 		opts.Secure = n.opts.Secure
 		opts.TLSConfig = n.opts.TLSConfig
 

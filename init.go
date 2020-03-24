@@ -18,9 +18,7 @@ type mountServices func(serviceName string)
  * param: mountServices actionHandler
  */
 func Init(serviceName string, eventsHandler mountServices, actionHandler mountServices, opts ...broker.Option) {
-	fmt.Println(opts, "_o.")
 	if opts != nil {
-		fmt.Println(opts, " O.")
 		if err := broker.Init(opts...); err != nil {
 			log.Fatal(err, " Please check broker options... Failed to start service.")
 		}
