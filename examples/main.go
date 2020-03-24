@@ -2,21 +2,24 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Just4Ease/nuMicro"
 	"github.com/Just4Ease/nuMicro/broker"
 )
 
 func main() {
-	i, err := broker.Request("ExampleSVC.sample", nil, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	go func() {
+		time.Sleep(5 * time.Second)
+		i, err := broker.Request("ExampleSVC.sample", nil, nil)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	fmt.Println(i)
-
+		fmt.Println(i)
+	}()
 	serviceName := "ExampleSVC"
-	nuMicro.Init(serviceName, nil, Action, broker.Addrs("127.0.0.1:4222"))
+	nuMicro.Init(serviceName, nil, Action, broker.Addrs("nats://demo.nats.io"))
 }
 
 func Action(serviceName string) {

@@ -353,7 +353,7 @@ func (n *natsBroker) setOption(opts ...Option) {
 	})
 
 	// local embedded server
-	n.local = true
+	n.local = false
 	// set to drain
 	n.drain = true
 
