@@ -3,13 +3,24 @@ package main
 import (
 	"fmt"
 
+	"github.com/Just4Ease/nuMicro"
 	"github.com/Just4Ease/nuMicro/broker"
 )
 
 func main() {
-	_ = broker.Connect()
+	i, err := broker.Request("ExampleSVC.sample", nil, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-	_, _ = broker.Respond("ExampleSVC.sample", func(event broker.Event) interface{} {
+	fmt.Println(i)
+
+	serviceName := "ExampleSVC"
+	nuMicro.Init(serviceName, nil, Action, broker.Addrs("127.0.0.1:4222"))
+}
+
+func Action(serviceName string) {
+	_, _ = broker.Respond("ExampleSVC.sample", func(event broker.RequestEvent) interface{} {
 
 		result := make(map[string]string)
 		result["username"] = "just4ease"
@@ -18,14 +29,5 @@ func main() {
 		result["website"] = "https://justicenefe.com"
 
 		return result
-	}, nil)
-
-
-
-	i, err := broker.Request("ExampleSVC.sample", nil, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(i)
+	})
 }

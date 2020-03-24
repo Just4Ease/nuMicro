@@ -17,7 +17,13 @@ type mountServices func(serviceName string)
  * param: mountServices eventsHandler
  * param: mountServices actionHandler
  */
-func Init(serviceName string, eventsHandler mountServices, actionHandler mountServices) {
+func Init(serviceName string, eventsHandler mountServices, actionHandler mountServices, opts ...broker.Option) {
+	if opts != nil {
+		if err := broker.Init(opts...); err != nil {
+			log.Fatal(err, " Please check broker options... Failed to start service.")
+		}
+	}
+
 	if err := broker.Connect(); err != nil {
 		log.Fatal(err, " Failed to start broker. Mayday!, Mayday! Call the NATS officer, ensure all is well!")
 	}
