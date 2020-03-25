@@ -13,7 +13,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type natsBroker struct {
+type NatsBroker struct {
 	sync.Once
 	sync.RWMutex
 
@@ -94,7 +94,7 @@ func (s *subscriber) Unsubscribe() error {
 	return s.s.Unsubscribe()
 }
 
-func (n *natsBroker) Address() string {
+func (n *NatsBroker) Address() string {
 	n.RLock()
 	defer n.RUnlock()
 
@@ -113,7 +113,7 @@ func (n *natsBroker) Address() string {
 	return "127.0.0.1:-1"
 }
 
-func (n *natsBroker) setAddresses(addresses []string) []string {
+func (n *NatsBroker) setAddresses(addresses []string) []string {
 	//nolint:prealloc
 	var connectionAddresses []string
 	for _, address := range addresses {
@@ -133,7 +133,7 @@ func (n *natsBroker) setAddresses(addresses []string) []string {
 	return connectionAddresses
 }
 
-func (n *natsBroker) Connect() error {
+func (n *NatsBroker) Connect() error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -182,7 +182,7 @@ func (n *natsBroker) Connect() error {
 	}
 }
 
-func (n *natsBroker) Disconnect() error {
+func (n *NatsBroker) Disconnect() error {
 	n.RLock()
 	defer n.RUnlock()
 
@@ -214,16 +214,16 @@ func (n *natsBroker) Disconnect() error {
 	return nil
 }
 
-func (n *natsBroker) Init(opts ...Option) error {
+func (n *NatsBroker) Init(opts ...Option) error {
 	n.setOption(opts...)
 	return nil
 }
 
-func (n *natsBroker) Options() Options {
+func (n *NatsBroker) Options() Options {
 	return n.opts
 }
 
-func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption) error {
+func (n *NatsBroker) Publish(channel string, msg *Message, opts ...PublishOption) error {
 	b, err := n.opts.Codec.Marshal(msg)
 	if err != nil {
 		return err
@@ -233,7 +233,7 @@ func (n *natsBroker) Publish(channel string, msg *Message, opts ...PublishOption
 	return n.conn.Publish(channel, b)
 }
 
-func (n *natsBroker) Request(channel string, msg *RequestInput, opts ...PublishOption) (interface{}, error) {
+func (n *NatsBroker) Request(channel string, msg *RequestInput, opts ...PublishOption) (interface{}, error) {
 	id, _ := uuid.NewV4()
 	replyAlias := fmt.Sprintf("%s", id)
 	var result interface{}
@@ -256,7 +256,7 @@ func (n *natsBroker) Request(channel string, msg *RequestInput, opts ...PublishO
 	return result, nil
 }
 
-func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscriber, error) {
+func (n *NatsBroker) Subscribe(channel string, handler Handler, opts ...SubscribeOption) (Subscriber, error) {
 	if n.conn == nil {
 		return nil, errors.New("not connected")
 	}
@@ -297,7 +297,7 @@ func (n *natsBroker) Subscribe(channel string, handler Handler, opts ...Subscrib
 	return &subscriber{s: sub, opts: opt}, nil
 }
 
-func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...SubscribeOption) (Subscriber, error) {
+func (n *NatsBroker) Respond(channel string, handler ActionHandle, opts ...SubscribeOption) (Subscriber, error) {
 	if n.conn == nil {
 		return nil, errors.New("not connected")
 	}
@@ -340,11 +340,11 @@ func (n *natsBroker) Respond(channel string, handler ActionHandle, opts ...Subsc
 	return &subscriber{s: sub, opts: opt}, nil
 }
 
-func (n *natsBroker) String() string {
+func (n *NatsBroker) String() string {
 	return "nats"
 }
 
-func (n *natsBroker) setOption(opts ...Option) {
+func (n *NatsBroker) setOption(opts ...Option) {
 	for _, o := range opts {
 		o(&n.opts)
 	}
@@ -369,15 +369,15 @@ func (n *natsBroker) setOption(opts ...Option) {
 	n.addresses = n.setAddresses(n.opts.Addresses)
 }
 
-func (n *natsBroker) onClose(conn *nats.Conn) {
+func (n *NatsBroker) onClose(conn *nats.Conn) {
 	n.closeCh <- nil
 }
 
-func (n *natsBroker) onDisconnectedError(conn *nats.Conn, err error) {
+func (n *NatsBroker) onDisconnectedError(conn *nats.Conn, err error) {
 	n.closeCh <- err
 }
 
-func (n *natsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err error) {
+func (n *NatsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err error) {
 	// There are kinds of different async error nats might callback, but we are interested
 	// in ErrDrainTimeout only here.
 	if err == nats.ErrDrainTimeout {
@@ -385,14 +385,14 @@ func (n *natsBroker) onAsyncError(conn *nats.Conn, sub *nats.Subscription, err e
 	}
 }
 
-func NewBroker(opts ...Option) *natsBroker {
+func NewBroker(opts ...Option) *NatsBroker {
 	options := Options{
 		// Default codec
 		Codec:   msgpack.Marshaller{},
 		Context: context.Background(),
 	}
 
-	n := &natsBroker{
+	n := &NatsBroker{
 		opts:    options,
 		closeCh: make(chan error),
 	}
