@@ -356,7 +356,7 @@ func (n *NatsBroker) setOption(opts ...Option) {
 	// local embedded server
 	n.local = false
 	// set to drain
-	n.drain = true
+	n.drain = false
 
 	if !n.opts.Secure {
 		n.opts.Secure = n.nopts.Secure
