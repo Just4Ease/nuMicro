@@ -2,6 +2,8 @@ package mongo
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"log"
 
 	"github.com/Just4Ease/nuMicro/database"
@@ -53,22 +55,21 @@ func New(databaseURl string, databaseName string, collection string) *DataStore 
  * Save
  * Save is used to save a record in the DataStore
  */
-func (d *DataStore) Save(payload interface{}) (map[string]interface{}, error) {
+func (d *DataStore) Save(payload interface{}, out interface{}) error {
 	collection := d.Connection.(*mongo.Collection)
 	_result_, err := collection.InsertOne(nil, payload)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var response map[string]interface{}
-
-	err = collection.FindOne(nil, bson.M{"_id": _result_.InsertedID}).Decode(&response)
+	err = collection.FindOne(nil, bson.M{"_id": _result_.InsertedID}).Decode(out)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return response, nil
+	return nil
 }
+
 /**
  * SaveMany
  * SaveMany is used to bulk insert into the DataStore
@@ -95,38 +96,38 @@ func (d *DataStore) SaveMany(payload []interface{}) error {
  * param: map[string]interface{} projection
  * return: map[string]interface{}
  */
-func (d *DataStore) FindById(id interface{}, projection map[string]interface{}) map[string]interface{} {
+func (d *DataStore) FindById(id interface{}, projection map[string]interface{}, result interface{}) error {
 	collection := d.Connection.(*mongo.Collection)
 	ops := options.FindOne()
 	if projection != nil {
 		ops.Projection = projection
 	}
-	var result map[string]interface{}
-	err := collection.FindOne(nil, bson.M{"_id": id}, ops).Decode(&result)
-	if err != nil {
-		return nil
+	if err := collection.FindOne(nil, bson.M{"_id": id}, ops).Decode(result); err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return errors.New("document not found")
+		}
+		return err
 	}
-	return result
+	return nil
 }
 
 /**
  * Find One by
  */
-func (d *DataStore) FindOne(fields, projection map[string]interface{}) map[string]interface{} {
+func (d *DataStore) FindOne(fields, projection map[string]interface{}, result interface{}) error {
 	collection := d.Connection.(*mongo.Collection)
-	var result map[string]interface{}
 	ops := options.FindOne()
 	ops.Projection = projection
-	err := collection.FindOne(nil, fields, ops).Decode(&result)
-	if err != nil {
-		// Log error here.
-		return nil
+	if err := collection.FindOne(nil, fields, ops).Decode(result); err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return errors.New("document not found")
+		}
+		return err
 	}
-
-	return result
+	return nil
 }
 
-func (d *DataStore) FindMany(fields, projection, sort map[string]interface{}, limit, skip int64) []map[string]interface{} {
+func (d *DataStore) FindMany(fields, projection, sort map[string]interface{}, limit, skip int64, results interface{}) error {
 	collection := d.Connection.(*mongo.Collection)
 	ops := options.Find()
 	if limit > 0 {
@@ -142,18 +143,23 @@ func (d *DataStore) FindMany(fields, projection, sort map[string]interface{}, li
 		ops.Sort = sort
 	}
 	cursor, err := collection.Find(nil, fields, ops)
-	result := make([]map[string]interface{}, 0)
 	if err != nil {
-		return result
+		return err
 	}
 
+	var output []map[string]interface{}
 	for cursor.Next(nil) {
 		var item map[string]interface{}
 		_ = cursor.Decode(&item)
-		result = append(result, item)
+		output = append(output, item)
 	}
 
-	return result
+	if b, e := json.Marshal(output); e == nil {
+		_ = json.Unmarshal(b, &results)
+	} else {
+		return e
+	}
+	return nil
 }
 
 /**

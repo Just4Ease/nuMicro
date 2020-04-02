@@ -67,7 +67,9 @@ func TestMongoDataStore(t *testing.T) {
 				"latitude":   "22.42297",
 				"longitude":  "132.341514",
 			}
-			output, err := dataStore.Save(entry)
+
+			var output map[string]interface{}
+			err := dataStore.Save(entry, &output)
 
 			if err != nil {
 				t.Fail()
@@ -76,12 +78,16 @@ func TestMongoDataStore(t *testing.T) {
 			if output["firstName"] != entry["firstName"] {
 				t.Fail()
 			}
+
+			fmt.Println(entry["_id"], output["_id"])
 		}
 	})
 
 	t.Run("Find One by Id", func(t *testing.T) {
-		output := dataStore.FindById("5e787f774a80487e0dd42488", nil)
-		if output == nil {
+		var output map[string]interface{}
+		err := dataStore.FindById("5e787f774a80487e0dd42488", nil, &output)
+		if err != nil {
+			fmt.Println(err.Error())
 			t.Fail()
 		}
 	})
@@ -90,8 +96,11 @@ func TestMongoDataStore(t *testing.T) {
 		filters := make(map[string]interface{})
 		filters["_id"] = "5e787f774a80487e0dd42488"
 		filters["firstName"] = "Justice"
-		output := dataStore.FindOne(filters, nil)
-		if output == nil {
+
+		var output map[string]interface{}
+		err := dataStore.FindOne(filters, nil, &output)
+		if err != nil {
+			fmt.Println(err.Error())
 			t.Fail()
 		}
 	})
@@ -101,8 +110,9 @@ func TestMongoDataStore(t *testing.T) {
 		filters["firstName"] = map[string]interface{}{
 			"$exists": true,
 		}
-		output := dataStore.FindMany(filters, nil, nil, 10, 0)
-		if output == nil {
+		var output []map[string]interface{}
+		err := dataStore.FindMany(filters, nil, nil, 10, 0, &output)
+		if err != nil {
 			t.Fail()
 		}
 		if len(output) != 10 {
@@ -121,8 +131,9 @@ func TestMongoDataStore(t *testing.T) {
 			t.Fail()
 		}
 
-		output := dataStore.FindById("5e787f774a80487e0dd42488", nil)
-		if output == nil {
+		var output map[string]interface{}
+		err := dataStore.FindById("5e787f774a80487e0dd42488", nil, &output)
+		if err != nil {
 			t.Fail()
 		}
 
@@ -144,8 +155,9 @@ func TestMongoDataStore(t *testing.T) {
 			t.Fail()
 		}
 
-		output := dataStore.FindById("5e787f77f31d7514045a4f44", nil)
-		if output == nil {
+		var output map[string]interface{}
+		err := dataStore.FindById("5e787f77f31d7514045a4f44", nil, &output)
+		if err != nil {
 			t.Fail()
 		}
 
@@ -165,10 +177,12 @@ func TestMongoDataStore(t *testing.T) {
 			t.Fail()
 		}
 
-		output := dataStore.FindMany(map[string]interface{}{
+		var output []map[string]interface{}
+
+		err := dataStore.FindMany(map[string]interface{}{
 			"isActive": true,
-		}, nil, nil, 10, 0)
-		if output == nil {
+		}, nil, nil, 10, 0, &output)
+		if err != nil {
 			t.Fail()
 		}
 
