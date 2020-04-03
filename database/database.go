@@ -9,12 +9,12 @@ type DataStore struct {
 
 type Database interface {
 	New(databaseURL, database, collection string) DataStore
-	Save(payload map[string]interface{}) (map[string]interface{}, error)
-	FindById(id string) map[string]interface{}
-	FindOne(fields, projection map[string]interface{}) map[string]interface{}
-	FindMany(fields, projection, sort map[string]interface{}, limit, skip int64) []map[string]interface{}
-	UpdateById(id string, payload map[string]interface{}) (map[string]interface{}, error)
-	UpdateOne(fields, payload map[string]interface{}) (map[string]interface{}, error)
+	Save(payload interface{}, out interface{}) error
+	FindById(id interface{}, projection map[string]interface{}, result interface{}) error
+	FindOne(fields, projection map[string]interface{}, result interface{}) error
+	FindMany(fields, projection, sort map[string]interface{}, limit, skip int64, results interface{}) error
+	UpdateById(id interface{}, payload interface{}) error
+	UpdateOne(fields map[string]interface{}, payload interface{})
 	UpdateMany(fields, payload map[string]interface{}) error
 	DeleteById(id string) error
 	DeleteOne(fields map[string]interface{}) error
