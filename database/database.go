@@ -19,4 +19,5 @@ type Database interface {
 	DeleteById(id string) error
 	DeleteOne(fields map[string]interface{}) error
 	DeleteMany(fields map[string]interface{}) error
+	Aggregate(pipelines []map[string]interface{}, result interface{}, allowDiskUse bool) error
 }

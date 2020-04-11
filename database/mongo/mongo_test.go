@@ -206,4 +206,25 @@ func TestMongoDataStore(t *testing.T) {
 			t.Fail()
 		}
 	})
+
+	t.Run("Can Aggregate", func(t *testing.T) {
+		pipeline := make([]map[string]interface{}, 0)
+
+		pipeline = append(pipeline, map[string]interface{}{
+			"$match": map[string]interface{}{
+				"age": map[string]interface{}{
+					"$gt": 30,
+				},
+			},
+		})
+
+		var output []map[string]interface{}
+		err := dataStore.Aggregate(pipeline, &output, true)
+		if err != nil {
+			t.Log("Can not do aggregation")
+			t.Fail()
+		}
+
+		fmt.Print(output, " Out.")
+	})
 }
