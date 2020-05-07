@@ -1,17 +1,15 @@
 package mongo
 
 import (
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (d *DataStore) Aggregate(pipeline interface{}, output interface{}, allowDiskUse bool) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) Aggregate(pipeline interface{}, output interface{}, allowDiskUse bool) error {
 	opts := options.Aggregate()
 	if allowDiskUse {
 		opts.SetAllowDiskUse(true)
 	}
-	C, err := collection.Aggregate(nil, pipeline, opts)
+	C, err := d.Collection.Aggregate(nil, pipeline, opts)
 	if err != nil {
 		return err
 	}

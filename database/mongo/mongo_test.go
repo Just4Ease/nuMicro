@@ -3,13 +3,14 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Just4Ease/nuMicro/database"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 )
 
-var dataStore *DataStore
+var dataStore database.Database
 var SampleData []map[string]interface{}
 
 func init() {
@@ -21,7 +22,11 @@ func init() {
 
 func TestMongoDataStore(t *testing.T) {
 	t.Run("Connect Database", func(t *testing.T) {
-		dataStore = New("mongodb://localhost:27017/test", "test", "test")
+		var err error
+		dataStore, err = New("mongodb://localhost:27017/test", "test", "test")
+		if err != nil {
+			t.Fail()
+		}
 	})
 
 	t.Run("Delete Many", func(t *testing.T) {
@@ -73,10 +78,12 @@ func TestMongoDataStore(t *testing.T) {
 
 			if err != nil {
 				t.Fail()
+				return
 			}
 
 			if output["firstName"] != entry["firstName"] {
 				t.Fail()
+				return
 			}
 
 			fmt.Println(entry["_id"], output["_id"])
@@ -89,6 +96,7 @@ func TestMongoDataStore(t *testing.T) {
 		if err != nil {
 			fmt.Println(err.Error())
 			t.Fail()
+			return
 		}
 	})
 

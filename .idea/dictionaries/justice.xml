@@ -1,6 +1,7 @@
 <component name="ProjectDictionaryState">
   <dictionary name="justice">
     <words>
+      <w>mongo</w>
       <w>msgpack</w>
       <w>nats</w>
     </words>

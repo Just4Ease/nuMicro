@@ -4,66 +4,69 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
-
 	"github.com/Just4Ease/nuMicro/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type DataStore database.DataStore
+type mongoStore struct {
+	IsConnected    bool
+	CollectionName string
+	Collection     *mongo.Collection
+	Database       *mongo.Database
+}
 
 /**
  * New
- * This initialises a new MongoDB DataStore
+ * This initialises a new MongoDB mongoStore
  * param: string databaseURl
  * param: string databaseName
  * param: string collection
- * return: *DataStore
+ * return: *mongoStore
  */
-func New(databaseURl string, databaseName string, collection string) *DataStore {
+func New(databaseURl string, databaseName string, collection string) (database.Database, error) {
 	clientOptions := options.Client().ApplyURI(databaseURl)
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
-
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	// Check the connection
 	if err = client.Ping(context.TODO(), nil); err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		return nil, err
 	}
 
 	db := client.Database(databaseName)
 
-	c := db.Collection(collection)
-
-	dataStore := DataStore{
-		IsConnected: true,
-		Database:    db,
-		Collection:  collection,
-		Connection:  c,
+	mongoStore := mongoStore{
+		IsConnected:    true,
+		CollectionName: collection,
+		Collection:     db.Collection(collection),
+		Database:       db,
 	}
 
-	return &dataStore
+	return &mongoStore, nil
 }
 
+//func (d *mongoStore) pingDBClient()  {
+//
+//}
 /**
  * Save
- * Save is used to save a record in the DataStore
+ * Save is used to save a record in the mongoStore
  */
-func (d *DataStore) Save(payload interface{}, out interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
-	_result_, err := collection.InsertOne(nil, payload)
+func (d *mongoStore) Save(payload interface{}, out interface{}) error {
+	_result_, err := d.Collection.InsertOne(context.Background(), payload)
 
 	if err != nil {
 		return err
 	}
 
-	err = collection.FindOne(nil, bson.M{"_id": _result_.InsertedID}).Decode(out)
+	err = d.Collection.FindOne(nil, bson.M{"_id": _result_.InsertedID}).Decode(out)
 	if err != nil {
 		return err
 	}
@@ -72,14 +75,13 @@ func (d *DataStore) Save(payload interface{}, out interface{}) error {
 
 /**
  * SaveMany
- * SaveMany is used to bulk insert into the DataStore
+ * SaveMany is used to bulk insert into the mongoStore
  *
  * param: []interface{} payload
  * return: error
  */
-func (d *DataStore) SaveMany(payload []interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
-	_, err := collection.InsertMany(nil, payload)
+func (d *mongoStore) SaveMany(payload []interface{}) error {
+	_, err := d.Collection.InsertMany(nil, payload)
 
 	if err != nil {
 		return err
@@ -89,20 +91,19 @@ func (d *DataStore) SaveMany(payload []interface{}) error {
 
 /**
  * FindById
- * find a single record by id in the DataStore
+ * find a single record by id in the mongoStore
  * returns nil if record isn't found.
  *
  * param: interface{}            id
  * param: map[string]interface{} projection
  * return: map[string]interface{}
  */
-func (d *DataStore) FindById(id interface{}, projection map[string]interface{}, result interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) FindById(id interface{}, projection map[string]interface{}, result interface{}) error {
 	ops := options.FindOne()
 	if projection != nil {
 		ops.Projection = projection
 	}
-	if err := collection.FindOne(nil, bson.M{"_id": id}, ops).Decode(result); err != nil {
+	if err := d.Collection.FindOne(nil, bson.M{"_id": id}, ops).Decode(result); err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return errors.New("document not found")
 		}
@@ -114,11 +115,10 @@ func (d *DataStore) FindById(id interface{}, projection map[string]interface{}, 
 /**
  * Find One by
  */
-func (d *DataStore) FindOne(fields, projection map[string]interface{}, result interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) FindOne(fields, projection map[string]interface{}, result interface{}) error {
 	ops := options.FindOne()
 	ops.Projection = projection
-	if err := collection.FindOne(nil, fields, ops).Decode(result); err != nil {
+	if err := d.Collection.FindOne(nil, fields, ops).Decode(result); err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return errors.New("document not found")
 		}
@@ -127,8 +127,7 @@ func (d *DataStore) FindOne(fields, projection map[string]interface{}, result in
 	return nil
 }
 
-func (d *DataStore) FindMany(fields, projection, sort map[string]interface{}, limit, skip int64, results interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) FindMany(fields, projection, sort map[string]interface{}, limit, skip int64, results interface{}) error {
 	ops := options.Find()
 	if limit > 0 {
 		ops.Limit = &limit
@@ -142,7 +141,7 @@ func (d *DataStore) FindMany(fields, projection, sort map[string]interface{}, li
 	if sort != nil {
 		ops.Sort = sort
 	}
-	cursor, err := collection.Find(nil, fields, ops)
+	cursor, err := d.Collection.Find(nil, fields, ops)
 	if err != nil {
 		return err
 	}
@@ -164,19 +163,18 @@ func (d *DataStore) FindMany(fields, projection, sort map[string]interface{}, li
 
 /**
  * UpdateById
- * Updates a single record by id in the DataStore
+ * Updates a single record by id in the mongoStore
  *
  * param: interface{} id
  * param: interface{} payload
  * return: error
  */
-func (d *DataStore) UpdateById(id interface{}, payload interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) UpdateById(id interface{}, payload interface{}) error {
 	var u map[string]interface{}
 	opts := options.FindOneAndUpdate()
 	up := true
 	opts.Upsert = &up
-	if err := collection.FindOneAndUpdate(nil, bson.M{"_id": id}, bson.M{
+	if err := d.Collection.FindOneAndUpdate(nil, bson.M{"_id": id}, bson.M{
 		"$set": payload,
 	}).Decode(&u); err != nil {
 		return err
@@ -187,16 +185,15 @@ func (d *DataStore) UpdateById(id interface{}, payload interface{}) error {
 /**
  * UpdateOne
  *
- * Updates one item in the DataStore using fields as the criteria.
+ * Updates one item in the mongoStore using fields as the criteria.
  *
  * param: map[string]interface{} fields
  * param: interface{}            payload
  * return: error
  */
-func (d *DataStore) UpdateOne(fields map[string]interface{}, payload interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) UpdateOne(fields map[string]interface{}, payload interface{}) error {
 	var u map[string]interface{}
-	if err := collection.FindOneAndUpdate(nil, fields, bson.M{
+	if err := d.Collection.FindOneAndUpdate(nil, fields, bson.M{
 		"$set": payload,
 	}).Decode(&u); err != nil {
 		return err
@@ -214,10 +211,8 @@ func (d *DataStore) UpdateOne(fields map[string]interface{}, payload interface{}
  * param: interface{}            payload
  * return: error
  */
-func (d *DataStore) UpdateMany(fields map[string]interface{}, payload interface{}) error {
-	// TODO: Update Many.
-	collection := d.Connection.(*mongo.Collection)
-	if _, err := collection.UpdateMany(nil, fields, bson.M{
+func (d *mongoStore) UpdateMany(fields, payload map[string]interface{}) error {
+	if _, err := d.Collection.UpdateMany(nil, fields, bson.M{
 		"$set": payload,
 	}); err != nil {
 		return err
@@ -232,10 +227,9 @@ func (d *DataStore) UpdateMany(fields map[string]interface{}, payload interface{
  * param: interface{} id
  * return: error
  */
-func (d *DataStore) DeleteById(id interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
+func (d *mongoStore) DeleteById(id interface{}) error {
 	var u map[string]interface{}
-	if e := collection.FindOneAndDelete(nil, bson.M{
+	if e := d.Collection.FindOneAndDelete(nil, bson.M{
 		"_id": id,
 	}).Decode(&u); e != nil {
 		return e
@@ -246,14 +240,13 @@ func (d *DataStore) DeleteById(id interface{}) error {
 
 /**
  * DeleteOne
- * Deletes one item from the DataStore using fields a hash map to properly filter what is to be deleted.
+ * Deletes one item from the mongoStore using fields a hash map to properly filter what is to be deleted.
  *
  * param: map[string]interface{} fields
  * return: error
  */
-func (d *DataStore) DeleteOne(fields map[string]interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
-	_, err := collection.DeleteOne(nil, fields)
+func (d *mongoStore) DeleteOne(fields map[string]interface{}) error {
+	_, err := d.Collection.DeleteOne(nil, fields)
 	if err != nil {
 		return err
 	}
@@ -262,14 +255,13 @@ func (d *DataStore) DeleteOne(fields map[string]interface{}) error {
 }
 
 /**
- * Delete Many items from the DataStore
+ * Delete Many items from the mongoStore
  *
  * param: map[string]interface{} fields
  * return: error
  */
-func (d *DataStore) DeleteMany(fields map[string]interface{}) error {
-	collection := d.Connection.(*mongo.Collection)
-	_, err := collection.DeleteMany(nil, fields)
+func (d *mongoStore) DeleteMany(fields map[string]interface{}) error {
+	_, err := d.Collection.DeleteMany(nil, fields)
 	if err != nil {
 		return err
 	}
