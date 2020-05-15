@@ -268,3 +268,7 @@ func (d *mongoStore) DeleteMany(fields map[string]interface{}) error {
 
 	return nil
 }
+
+func (d *mongoStore) Count(fields map[string]interface{}) (int64, error) {
+	return d.Collection.CountDocuments(nil, fields)
+}
