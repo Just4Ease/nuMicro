@@ -13,5 +13,5 @@ type Database interface {
 	DeleteOne(fields map[string]interface{}) error
 	DeleteMany(fields map[string]interface{}) error
 	Aggregate(pipelines interface{}, result interface{}, allowDiskUse bool) error
-	Count(fields map[string]interface{}) (int64, error)
+	Count(fields interface{}) (int64, error)
 }
